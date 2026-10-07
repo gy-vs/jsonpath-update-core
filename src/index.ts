@@ -1,1 +1,29 @@
-export type Token={kind:'root'|'field'|'index'|'wildcard';value?:string|number};export function parse(path:string):Token[]{if(!path.startsWith('$'))throw new Error('root');const out:Token[]=[{kind:'root'}];for(const part of path.slice(1).split('.').filter(Boolean))out.push(part==='*'?{kind:'wildcard'}:{kind:'field',value:part});return out}export function query(value:unknown,tokens:Token[]){let current:unknown[]=[value];for(const token of tokens.slice(1))current=current.flatMap(item=>token.kind==='wildcard'&&item&&typeof item==='object'?Object.values(item):token.kind==='field'&&item&&typeof item==='object'?[(item as Record<string,unknown>)[String(token.value)]]:[]);return current}
+/**
+ * jsonpath-update-core —— RFC 9535 风格的 JSONPath 查询与原子改写库。
+ *
+ * 查询：query(data, "$.servers[*].host")
+ * 改写：replace / remove / transform，同一表达式，命中点与 query 一一对应；
+ *       任何一点失败，整次调用什么都不改，原样输入连同出错路径一起返回。
+ */
+
+export { parse } from './parser.js';
+export { query } from './query.js';
+export { replace, remove, transform } from './update.js';
+export type { ValueTransformer } from './update.js';
+export { JSONPathSyntaxError, CyclicReferenceError } from './errors.js';
+export type {
+  JSONPathQuery,
+  Segment,
+  ChildSegment,
+  DescendantSegment,
+  Selector,
+  NameSelector,
+  WildcardSelector,
+  IndexSelector,
+  SliceSelector,
+  PathNode,
+  UpdateOp,
+  UpdateResult,
+  UpdateSuccess,
+  UpdateFailure,
+} from './types.js';
