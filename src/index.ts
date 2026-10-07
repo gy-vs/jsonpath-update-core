@@ -1,1 +1,34 @@
-export type Token={kind:'root'|'field'|'index'|'wildcard';value?:string|number};export function parse(path:string):Token[]{if(!path.startsWith('$'))throw new Error('root');const out:Token[]=[{kind:'root'}];for(const part of path.slice(1).split('.').filter(Boolean))out.push(part==='*'?{kind:'wildcard'}:{kind:'field',value:part});return out}export function query(value:unknown,tokens:Token[]){let current:unknown[]=[value];for(const token of tokens.slice(1))current=current.flatMap(item=>token.kind==='wildcard'&&item&&typeof item==='object'?Object.values(item):token.kind==='field'&&item&&typeof item==='object'?[(item as Record<string,unknown>)[String(token.value)]]:[]);return current}
+/**
+ * JSONPath query + immutable update engine (RFC 9535 selector subset).
+ *
+ * - {@link parse} parses an expression into a reusable AST.
+ * - {@link query} evaluates an expression and returns matched nodes with
+ *   their RFC 9535 normalized paths.
+ * - {@link values} is a convenience returning only matched values.
+ * - {@link replace} / {@link remove} / {@link update} rewrite matched nodes
+ *   immutably and atomically.
+ */
+import { parsePath } from './parser.js';
+import { query, queryFrames, values, sliceIndices, type PathNode } from './evaluate.js';
+import { replace, remove, update, type Transform } from './update.js';
+
+export { parsePath, query, queryFrames, values, sliceIndices, replace, remove, update };
+export type { PathNode, Transform };
+export type {
+  JsonPath,
+  Segment,
+  Selector,
+  NameSelector,
+  WildcardSelector,
+  IndexSelector,
+  SliceSelector,
+} from './ast.js';
+export {
+  JsonPathError,
+  JsonPathSyntaxError,
+  JsonPathCycleError,
+  JsonPathTransformError,
+} from './ast.js';
+
+/** Parse a JSONPath expression. Alias kept for the placeholder API name. */
+export const parse = parsePath;
